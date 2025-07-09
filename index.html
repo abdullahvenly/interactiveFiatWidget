@@ -199,6 +199,8 @@
     
     <!-- Widget Script -->
     <script type="text/babel">
+        const { useState, useEffect } = React;
+        
         // Error boundary component
         class ErrorBoundary extends React.Component {
             constructor(props) {
@@ -242,10 +244,10 @@
             }
         }
         
-        // Main widget component (paste your updated widget code here)
+        // Main widget component
         const VenlyOnrampWidget = () => {
-            const [selectedProvider, setSelectedProvider] = React.useState('TRANSAK');
-            const [formData, setFormData] = React.useState({
+            const [selectedProvider, setSelectedProvider] = useState('TRANSAK');
+            const [formData, setFormData] = useState({
                 fiatAmount: '300',
                 fiatCurrency: 'USD',
                 cryptoAmount: '0.15',
@@ -255,14 +257,14 @@
                 redirectUrl: 'https://yourapp.com/success',
                 selectedCountryCode: 'US'
             });
-            const [isLoading, setIsLoading] = React.useState(false);
-            const [generatedUrl, setGeneratedUrl] = React.useState('');
-            const [activeTab, setActiveTab] = React.useState('configure');
-            const [showCode, setShowCode] = React.useState(false);
-            const [supportedCurrencies, setSupportedCurrencies] = React.useState({ fiat: [], crypto: [] });
-            const [loadingCurrencies, setLoadingCurrencies] = React.useState(false);
-            const [showProviderDetails, setShowProviderDetails] = React.useState(false);
-            const [rampType, setRampType] = React.useState('ON');
+            const [isLoading, setIsLoading] = useState(false);
+            const [generatedUrl, setGeneratedUrl] = useState('');
+            const [activeTab, setActiveTab] = useState('configure');
+            const [showCode, setShowCode] = useState(false);
+            const [supportedCurrencies, setSupportedCurrencies] = useState({ fiat: [], crypto: [] });
+            const [loadingCurrencies, setLoadingCurrencies] = useState(false);
+            const [showProviderDetails, setShowProviderDetails] = useState(false);
+            const [rampType, setRampType] = useState('ON');
 
             const providers = {
                 TRANSAK: {
@@ -317,6 +319,150 @@
                 ]
             };
 
+            const apiEndpoints = {
+                TRANSAK: 'https://api-pay-sandbox.venly.io/fiat-ramp/TRANSAK/on',
+                MOONPAY: 'https://api-pay-sandbox.venly.io/fiat-ramp/MOONPAY/on',
+                RAMP_NETWORK: 'https://api-pay-sandbox.venly.io/fiat-ramp/RAMP_NETWORK/on'
+            };
+
+            // Create icon components using lucide
+            const CopyIcon = () => (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+            );
+
+            const ExternalLinkIcon = () => (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15,3 21,3 21,9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+            );
+
+            const PlayIcon = () => (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="5,3 19,12 5,21"></polygon>
+                </svg>
+            );
+
+            const CodeIcon = () => (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="16,18 22,12 16,6"></polyline>
+                    <polyline points="8,6 2,12 8,18"></polyline>
+                </svg>
+            );
+
+            const SettingsIcon = () => (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+                </svg>
+            );
+
+            const DollarSignIcon = () => (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+            );
+
+            const CheckIcon = () => (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20,6 9,17 4,12"></polyline>
+                </svg>
+            );
+
+            const ClockIcon = () => (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12,6 12,12 16,14"></polyline>
+                </svg>
+            );
+
+            const GlobeIcon = () => (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+            );
+
+            const ZapIcon = () => (
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="13,2 3,14 12,14 11,22 21,10 12,10"></polygon>
+                </svg>
+            );
+
+            const UsersIcon = () => (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87m-4-12a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            );
+
+            const TrendingUpIcon = () => (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="23,6 13.5,15.5 8.5,10.5 1,18"></polyline>
+                    <polyline points="17,6 23,6 23,12"></polyline>
+                </svg>
+            );
+
+            const ChevronRightIcon = () => (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9,18 15,12 9,6"></polyline>
+                </svg>
+            );
+
+            const ChevronDownIcon = () => (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6,9 12,15 18,9"></polyline>
+                </svg>
+            );
+
+            const ShieldIcon = () => (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+            );
+
+            // Simulate fetching supported currencies
+            const fetchSupportedCurrencies = async (provider) => {
+                setLoadingCurrencies(true);
+                
+                // Simulate API call delay
+                setTimeout(() => {
+                    // Mock response based on the documentation
+                    const mockCurrencies = {
+                        fiat: [
+                            { name: 'US Dollar', symbol: 'USD', rampType: ['ON', 'OFF'] },
+                            { name: 'Euro', symbol: 'EUR', rampType: ['ON', 'OFF'] },
+                            { name: 'British Pound', symbol: 'GBP', rampType: ['ON', 'OFF'] },
+                            { name: 'Canadian Dollar', symbol: 'CAD', rampType: ['ON', 'OFF'] },
+                            { name: 'Australian Dollar', symbol: 'AUD', rampType: ['ON', 'OFF'] },
+                            { name: 'Japanese Yen', symbol: 'JPY', rampType: ['ON', 'OFF'] },
+                            { name: 'Swiss Franc', symbol: 'CHF', rampType: ['ON', 'OFF'] },
+                            { name: 'Swedish Krona', symbol: 'SEK', rampType: ['ON', 'OFF'] }
+                        ],
+                        crypto: [
+                            { name: 'Ethereum', symbol: 'ETH', network: 'ethereum', rampType: ['ON', 'OFF'] },
+                            { name: 'Bitcoin', symbol: 'BTC', network: 'mainnet', rampType: ['ON', 'OFF'] },
+                            { name: 'USD Coin', symbol: 'USDC', network: 'ethereum', rampType: ['ON', 'OFF'] },
+                            { name: 'Tether', symbol: 'USDT', network: 'ethereum', rampType: ['ON', 'OFF'] },
+                            { name: 'Polygon', symbol: 'MATIC', network: 'polygon', rampType: ['ON', 'OFF'] },
+                            { name: 'Binance Coin', symbol: 'BNB', network: 'bsc', rampType: ['ON', 'OFF'] },
+                            { name: 'Solana', symbol: 'SOL', network: 'solana', rampType: ['ON', 'OFF'] },
+                            { name: 'Avalanche', symbol: 'AVAX', network: 'avaxcchain', rampType: ['ON', 'OFF'] }
+                        ]
+                    };
+                    
+                    setSupportedCurrencies(mockCurrencies);
+                    setLoadingCurrencies(false);
+                }, 1000);
+            };
+
             const generateOnrampUrl = async () => {
                 setIsLoading(true);
                 trackEvent('generate_url', 'widget', selectedProvider);
@@ -350,209 +496,33 @@
                 }, 2000);
             };
 
-            // Track provider selection
-            React.useEffect(() => {
-                trackEvent('provider_selected', 'widget', selectedProvider);
-            }, [selectedProvider]);
+            const copyToClipboard = (text) => {
+                navigator.clipboard.writeText(text);
+            };
 
-            // Your complete widget JSX goes here
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
-                    <div className="max-w-8xl mx-auto">
-                        <div className="text-center mb-8">
-                            <div className="flex items-center justify-center mb-4">
-                                <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-full mr-4">
-                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                </div>
-                                <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                    Venly Onramp Integration
-                                </h1>
-                            </div>
-                            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-                                Interactive configuration tool for Venly's fiat-to-crypto onramp solutions. 
-                                Choose your provider, configure parameters, and generate integration code.
-                            </p>
-                        </div>
-                        
-                        {import React, { useState, useEffect } from 'react';
-import { Copy, ExternalLink, Play, Code, Settings, CreditCard, Globe, Shield, Check, AlertCircle, Info, Zap, Users, TrendingUp, Clock, DollarSign, Smartphone, ChevronRight, ChevronDown, X } from 'lucide-react';
+            const getRequestBody = () => {
+                const body = {
+                    fiatAmount: formData.fiatAmount,
+                    fiatCurrency: formData.fiatCurrency,
+                    cryptoAmount: formData.cryptoAmount,
+                    cryptoCurrency: {
+                        network: formData.cryptoCurrency.network,
+                        symbol: formData.cryptoCurrency.symbol
+                    },
+                    redirectUrl: formData.redirectUrl,
+                    email: formData.email,
+                    walletAddress: formData.walletAddress
+                };
 
-const VenlyOnrampWidget = () => {
-  const [selectedProvider, setSelectedProvider] = useState('TRANSAK');
-  const [formData, setFormData] = useState({
-    fiatAmount: '300',
-    fiatCurrency: 'USD',
-    cryptoAmount: '0.15',
-    cryptoCurrency: { network: 'ethereum', symbol: 'ETH', name: 'Ethereum' },
-    email: 'user@example.com',
-    walletAddress: '0x3FE9a7D68C6a4a2d6575A6C803E4CDF9340E370E',
-    redirectUrl: 'https://yourapp.com/success',
-    selectedCountryCode: 'US'
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [generatedUrl, setGeneratedUrl] = useState('');
-  const [activeTab, setActiveTab] = useState('configure');
-  const [showCode, setShowCode] = useState(false);
-  const [supportedCurrencies, setSupportedCurrencies] = useState({ fiat: [], crypto: [] });
-  const [loadingCurrencies, setLoadingCurrencies] = useState(false);
-  const [showProviderDetails, setShowProviderDetails] = useState(false);
-  const [rampType, setRampType] = useState('ON');
+                if (selectedProvider === 'RAMP_NETWORK') {
+                    body.selectedCountryCode = formData.selectedCountryCode;
+                }
 
-  const providers = {
-    TRANSAK: {
-      name: 'Transak',
-      description: 'Global leader in fiat-to-crypto infrastructure',
-      features: ['150+ Countries', 'KYC/AML Compliant', 'Credit/Debit Cards', 'Bank Transfers', 'Apple Pay/Google Pay', 'Multiple Cryptocurrencies'],
-      fees: '0.99% - 5.5%',
-      processingTime: '10-30 minutes',
-      supported: ['150+ countries', '100+ cryptocurrencies', '50+ fiat currencies'],
-      logo: '🏦',
-      color: 'blue',
-      highlights: ['Most global coverage', 'Established provider', 'Multiple payment methods'],
-      website: 'https://transak.com'
-    },
-    MOONPAY: {
-      name: 'MoonPay',
-      description: 'Simple and fast crypto purchases',
-      features: ['160+ Countries', 'Fast Processing', 'Low Fees', 'Mobile Optimized', 'Instant Purchases', 'Premium Support'],
-      fees: '1% - 4.5%',
-      processingTime: '5-15 minutes',
-      supported: ['160+ countries', '80+ cryptocurrencies', '40+ fiat currencies'],
-      logo: '🌙',
-      color: 'purple',
-      highlights: ['Fastest processing', 'Mobile-first design', 'Low fees'],
-      website: 'https://moonpay.com'
-    },
-    RAMP_NETWORK: {
-      name: 'Ramp Network',
-      description: 'Enterprise-grade fiat-to-crypto infrastructure',
-      features: ['170+ Countries', 'Enterprise Focused', 'API-First', 'White Label', 'Custom Branding', 'Advanced Analytics'],
-      fees: '0.49% - 2.9%',
-      processingTime: '5-10 minutes',
-      supported: ['170+ countries', '60+ cryptocurrencies', '45+ fiat currencies'],
-      logo: '🚀',
-      color: 'green',
-      highlights: ['Lowest fees', 'Enterprise features', 'Custom branding'],
-      website: 'https://ramp.network'
-    }
-  };
+                return JSON.stringify(body, null, 2);
+            };
 
-  const popularCurrencies = {
-    fiat: ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK'],
-    crypto: [
-      { symbol: 'ETH', network: 'ethereum', name: 'Ethereum' },
-      { symbol: 'BTC', network: 'mainnet', name: 'Bitcoin' },
-      { symbol: 'USDC', network: 'ethereum', name: 'USD Coin' },
-      { symbol: 'USDT', network: 'ethereum', name: 'Tether' },
-      { symbol: 'MATIC', network: 'polygon', name: 'Polygon' },
-      { symbol: 'BNB', network: 'bsc', name: 'Binance Coin' },
-      { symbol: 'SOL', network: 'solana', name: 'Solana' },
-      { symbol: 'AVAX', network: 'avaxcchain', name: 'Avalanche' }
-    ]
-  };
-
-  const apiEndpoints = {
-    TRANSAK: 'https://api-pay-sandbox.venly.io/fiat-ramp/TRANSAK/on',
-    MOONPAY: 'https://api-pay-sandbox.venly.io/fiat-ramp/MOONPAY/on',
-    RAMP_NETWORK: 'https://api-pay-sandbox.venly.io/fiat-ramp/RAMP_NETWORK/on'
-  };
-
-  // Simulate fetching supported currencies
-  const fetchSupportedCurrencies = async (provider) => {
-    setLoadingCurrencies(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      // Mock response based on the documentation
-      const mockCurrencies = {
-        fiat: [
-          { name: 'US Dollar', symbol: 'USD', rampType: ['ON', 'OFF'] },
-          { name: 'Euro', symbol: 'EUR', rampType: ['ON', 'OFF'] },
-          { name: 'British Pound', symbol: 'GBP', rampType: ['ON', 'OFF'] },
-          { name: 'Canadian Dollar', symbol: 'CAD', rampType: ['ON', 'OFF'] },
-          { name: 'Australian Dollar', symbol: 'AUD', rampType: ['ON', 'OFF'] },
-          { name: 'Japanese Yen', symbol: 'JPY', rampType: ['ON', 'OFF'] },
-          { name: 'Swiss Franc', symbol: 'CHF', rampType: ['ON', 'OFF'] },
-          { name: 'Swedish Krona', symbol: 'SEK', rampType: ['ON', 'OFF'] }
-        ],
-        crypto: [
-          { name: 'Ethereum', symbol: 'ETH', network: 'ethereum', rampType: ['ON', 'OFF'] },
-          { name: 'Bitcoin', symbol: 'BTC', network: 'mainnet', rampType: ['ON', 'OFF'] },
-          { name: 'USD Coin', symbol: 'USDC', network: 'ethereum', rampType: ['ON', 'OFF'] },
-          { name: 'Tether', symbol: 'USDT', network: 'ethereum', rampType: ['ON', 'OFF'] },
-          { name: 'Polygon', symbol: 'MATIC', network: 'polygon', rampType: ['ON', 'OFF'] },
-          { name: 'Binance Coin', symbol: 'BNB', network: 'bsc', rampType: ['ON', 'OFF'] },
-          { name: 'Solana', symbol: 'SOL', network: 'solana', rampType: ['ON', 'OFF'] },
-          { name: 'Avalanche', symbol: 'AVAX', network: 'avaxcchain', rampType: ['ON', 'OFF'] }
-        ]
-      };
-      
-      setSupportedCurrencies(mockCurrencies);
-      setLoadingCurrencies(false);
-    }, 1000);
-  };
-
-  const generateOnrampUrl = async () => {
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      const baseUrls = {
-        TRANSAK: 'https://global-stg.transak.com',
-        MOONPAY: 'https://buy-sandbox.moonpay.com',
-        RAMP_NETWORK: 'https://app.demo.ramp.network'
-      };
-      
-      const params = new URLSearchParams({
-        fiatAmount: formData.fiatAmount,
-        fiatCurrency: formData.fiatCurrency,
-        cryptoAmount: formData.cryptoAmount,
-        cryptoCurrency: formData.cryptoCurrency.symbol,
-        network: formData.cryptoCurrency.network,
-        walletAddress: formData.walletAddress,
-        email: formData.email,
-        redirectUrl: formData.redirectUrl
-      });
-      
-      if (selectedProvider === 'RAMP_NETWORK') {
-        params.append('selectedCountryCode', formData.selectedCountryCode);
-      }
-      
-      const url = `${baseUrls[selectedProvider]}?${params.toString()}`;
-      setGeneratedUrl(url);
-      setIsLoading(false);
-    }, 2000);
-  };
-
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-  };
-
-  const getRequestBody = () => {
-    const body = {
-      fiatAmount: formData.fiatAmount,
-      fiatCurrency: formData.fiatCurrency,
-      cryptoAmount: formData.cryptoAmount,
-      cryptoCurrency: {
-        network: formData.cryptoCurrency.network,
-        symbol: formData.cryptoCurrency.symbol
-      },
-      redirectUrl: formData.redirectUrl,
-      email: formData.email,
-      walletAddress: formData.walletAddress
-    };
-
-    if (selectedProvider === 'RAMP_NETWORK') {
-      body.selectedCountryCode = formData.selectedCountryCode;
-    }
-
-    return JSON.stringify(body, null, 2);
-  };
-
-  const getCodeExample = () => {
-    return `// Venly Onramp Integration Example
+            const getCodeExample = () => {
+                return `// Venly Onramp Integration Example
 const response = await fetch('${apiEndpoints[selectedProvider]}', {
   method: 'POST',
   headers: {
@@ -579,584 +549,573 @@ if (data.success) {
   iframe.style.height = '600px';
   document.body.appendChild(iframe);
 }`;
-  };
+            };
 
-  const getCurlExample = () => {
-    return `curl -X POST '${apiEndpoints[selectedProvider]}' \\
+            const getCurlExample = () => {
+                return `curl -X POST '${apiEndpoints[selectedProvider]}' \\
   -H 'Content-Type: application/json' \\
   -H 'Authorization: Bearer your-access-token' \\
   -d '${getRequestBody()}'`;
-  };
+            };
 
-  useEffect(() => {
-    fetchSupportedCurrencies(selectedProvider);
-  }, [selectedProvider]);
+            useEffect(() => {
+                fetchSupportedCurrencies(selectedProvider);
+            }, [selectedProvider]);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
-      <div className="max-w-8xl mx-auto">
-        
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-full mr-4">
-              <Zap className="w-8 h-8" />
-            </div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Venly Onramp Integration
-            </h1>
-          </div>
-          <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-            Interactive configuration tool for Venly's fiat-to-crypto onramp solutions. 
-            Choose your provider, configure parameters, and generate integration code.
-          </p>
-          <div className="flex items-center justify-center mt-6 space-x-6">
-            <div className="flex items-center text-gray-600">
-              <Globe className="w-5 h-5 mr-2" />
-              <span>3 Global Providers</span>
-            </div>
-            <div className="flex items-center text-gray-600">
-              <Users className="w-5 h-5 mr-2" />
-              <span>170+ Countries</span>
-            </div>
-            <div className="flex items-center text-gray-600">
-              <TrendingUp className="w-5 h-5 mr-2" />
-              <span>100+ Cryptocurrencies</span>
-            </div>
-          </div>
-        </div>
+            // Track provider selection
+            useEffect(() => {
+                trackEvent('provider_selected', 'widget', selectedProvider);
+            }, [selectedProvider]);
 
-        {/* Provider Selection Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {Object.entries(providers).map(([key, provider]) => (
-            <div
-              key={key}
-              className={`relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 hover:scale-105 ${
-                selectedProvider === key
-                  ? `border-${provider.color}-500 bg-${provider.color}-50 shadow-lg`
-                  : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
-              }`}
-              onClick={() => setSelectedProvider(key)}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <span className="text-3xl mr-3">{provider.logo}</span>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">{provider.name}</h3>
-                    <p className="text-sm text-gray-600">{provider.processingTime}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">{provider.fees}</div>
-                  <div className="text-xs text-gray-500">fees</div>
-                </div>
-              </div>
-              
-              <p className="text-gray-700 mb-4 text-sm">{provider.description}</p>
-              
-              <div className="space-y-2">
-                {provider.highlights.map((highlight, idx) => (
-                  <div key={idx} className="flex items-center">
-                    <Check className="w-4 h-4 text-green-500 mr-2" />
-                    <span className="text-sm text-gray-700">{highlight}</span>
-                  </div>
-                ))}
-              </div>
-              
-              {selectedProvider === key && (
-                <div className="absolute top-4 right-4">
-                  <div className={`w-3 h-3 rounded-full bg-${provider.color}-500`}></div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Left Panel - Configuration */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-4">
-              
-              {/* Tab Navigation */}
-              <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setActiveTab('configure')}
-                  className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === 'configure' 
-                      ? 'bg-white text-blue-600 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <Settings className="w-4 h-4 inline mr-2" />
-                  Configure
-                </button>
-                <button
-                  onClick={() => setActiveTab('currencies')}
-                  className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === 'currencies' 
-                      ? 'bg-white text-blue-600 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <DollarSign className="w-4 h-4 inline mr-2" />
-                  Currencies
-                </button>
-              </div>
-
-              {activeTab === 'configure' && (
-                <div className="space-y-6">
-                  {/* Ramp Type Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ramp Type
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setRampType('ON')}
-                        className={`p-3 rounded-lg text-sm font-medium transition-colors ${
-                          rampType === 'ON'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        Buy Crypto (Onramp)
-                      </button>
-                      <button
-                        onClick={() => setRampType('OFF')}
-                        className={`p-3 rounded-lg text-sm font-medium transition-colors ${
-                          rampType === 'OFF'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        Sell Crypto (Offramp)
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Fiat Amount */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Fiat Amount
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        value={formData.fiatAmount}
-                        onChange={(e) => setFormData({...formData, fiatAmount: e.target.value})}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="300"
-                        min="1"
-                        max="10000"
-                      />
-                      <div className="absolute right-3 top-3 text-gray-400">
-                        {formData.fiatCurrency}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Fiat Currency */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Fiat Currency
-                    </label>
-                    <select
-                      value={formData.fiatCurrency}
-                      onChange={(e) => setFormData({...formData, fiatCurrency: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      {popularCurrencies.fiat.map(currency => (
-                        <option key={currency} value={currency}>{currency}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Crypto Currency */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Cryptocurrency
-                    </label>
-                    <select
-                      value={formData.cryptoCurrency.symbol}
-                      onChange={(e) => {
-                        const crypto = popularCurrencies.crypto.find(c => c.symbol === e.target.value);
-                        setFormData({...formData, cryptoCurrency: crypto});
-                      }}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      {popularCurrencies.crypto.map(crypto => (
-                        <option key={crypto.symbol} value={crypto.symbol}>
-                          {crypto.symbol} - {crypto.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Wallet Address */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Wallet Address
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.walletAddress}
-                      onChange={(e) => setFormData({...formData, walletAddress: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-                      placeholder="0x..."
-                    />
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="user@example.com"
-                    />
-                  </div>
-
-                  {/* Redirect URL */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Redirect URL
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.redirectUrl}
-                      onChange={(e) => setFormData({...formData, redirectUrl: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="https://yourapp.com/success"
-                    />
-                  </div>
-
-                  {/* Country Code (for Ramp Network) */}
-                  {selectedProvider === 'RAMP_NETWORK' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Country Code
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.selectedCountryCode}
-                        onChange={(e) => setFormData({...formData, selectedCountryCode: e.target.value})}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="US"
-                        maxLength="2"
-                      />
-                    </div>
-                  )}
-
-                  {/* Generate Button */}
-                  <button
-                    onClick={generateOnrampUrl}
-                    disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                        Generating...
-                      </div>
-                    ) : (
-                      <div className="flex items-center">
-                        <Play className="w-5 h-5 mr-2" />
-                        Generate {rampType === 'ON' ? 'Onramp' : 'Offramp'} URL
-                      </div>
-                    )}
-                  </button>
-                </div>
-              )}
-
-              {activeTab === 'currencies' && (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      Supported Currencies
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {providers[selectedProvider].name} supported currencies
-                    </p>
-                  </div>
-
-                  {loadingCurrencies ? (
-                    <div className="text-center py-8">
-                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                      <p className="text-sm text-gray-600">Loading currencies...</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Fiat Currencies</h4>
-                        <div className="grid grid-cols-3 gap-2">
-                          {supportedCurrencies.fiat.slice(0, 12).map(currency => (
-                            <div key={currency.symbol} className="bg-gray-50 p-2 rounded text-center">
-                              <span className="text-sm font-medium">{currency.symbol}</span>
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
+                    <div className="max-w-8xl mx-auto">
+                        
+                        {/* Header */}
+                        <div className="text-center mb-8">
+                            <div className="flex items-center justify-center mb-4">
+                                <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-full mr-4">
+                                    <ZapIcon />
+                                </div>
+                                <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                    Venly Onramp Integration
+                                </h1>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Cryptocurrencies</h4>
-                        <div className="space-y-2">
-                          {supportedCurrencies.crypto.slice(0, 8).map(crypto => (
-                            <div key={crypto.symbol} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                              <span className="text-sm font-medium">{crypto.symbol}</span>
-                              <span className="text-xs text-gray-500">{crypto.network}</span>
+                            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
+                                Interactive configuration tool for Venly's fiat-to-crypto onramp solutions. 
+                                Choose your provider, configure parameters, and generate integration code.
+                            </p>
+                            <div className="flex items-center justify-center mt-6 space-x-6">
+                                <div className="flex items-center text-gray-600">
+                                    <GlobeIcon />
+                                    <span className="ml-2">3 Global Providers</span>
+                                </div>
+                                <div className="flex items-center text-gray-600">
+                                    <UsersIcon />
+                                    <span className="ml-2">170+ Countries</span>
+                                </div>
+                                <div className="flex items-center text-gray-600">
+                                    <TrendingUpIcon />
+                                    <span className="ml-2">100+ Cryptocurrencies</span>
+                                </div>
                             </div>
-                          ))}
                         </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
 
-          {/* Right Panel - Results & Code */}
-          <div className="lg:col-span-2">
-            <div className="space-y-6">
-              
-              {/* Provider Details */}
-              <div className="bg-white rounded-2xl shadow-xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center">
-                    <span className="text-3xl mr-3">{providers[selectedProvider].logo}</span>
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">
-                        {providers[selectedProvider].name}
-                      </h2>
-                      <p className="text-gray-600">{providers[selectedProvider].description}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowProviderDetails(!showProviderDetails)}
-                    className="text-blue-600 hover:text-blue-700"
-                  >
-                    {showProviderDetails ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <Clock className="w-5 h-5 text-blue-600 mr-2" />
-                      <h4 className="font-medium text-gray-900">Processing Time</h4>
-                    </div>
-                    <p className="text-sm text-gray-600">{providers[selectedProvider].processingTime}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <DollarSign className="w-5 h-5 text-green-600 mr-2" />
-                      <h4 className="font-medium text-gray-900">Fees</h4>
-                    </div>
-                    <p className="text-sm text-gray-600">{providers[selectedProvider].fees}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <Globe className="w-5 h-5 text-purple-600 mr-2" />
-                      <h4 className="font-medium text-gray-900">Coverage</h4>
-                    </div>
-                    <p className="text-sm text-gray-600">{providers[selectedProvider].supported[0]}</p>
-                  </div>
-                </div>
-
-                {showProviderDetails && (
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium text-gray-900 mb-3">Features</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      {providers[selectedProvider].features.map((feature, idx) => (
-                        <div key={idx} className="flex items-center">
-                          <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-sm text-gray-700">{feature}</span>
+                        {/* Provider Selection Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            {Object.entries(providers).map(([key, provider]) => (
+                                <div
+                                    key={key}
+                                    className={`relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 hover:scale-105 ${
+                                        selectedProvider === key
+                                            ? 'border-blue-500 bg-blue-50 shadow-lg'
+                                            : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+                                    }`}
+                                    onClick={() => setSelectedProvider(key)}
+                                >
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center">
+                                            <span className="text-3xl mr-3">{provider.logo}</span>
+                                            <div>
+                                                <h3 className="text-xl font-bold text-gray-900">{provider.name}</h3>
+                                                <p className="text-sm text-gray-600">{provider.processingTime}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-sm font-medium text-gray-900">{provider.fees}</div>
+                                            <div className="text-xs text-gray-500">fees</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <p className="text-gray-700 mb-4 text-sm">{provider.description}</p>
+                                    
+                                    <div className="space-y-2">
+                                        {provider.highlights.map((highlight, idx) => (
+                                            <div key={idx} className="flex items-center">
+                                                <CheckIcon />
+                                                <span className="text-sm text-gray-700 ml-2">{highlight}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    {selectedProvider === key && (
+                                        <div className="absolute top-4 right-4">
+                                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
 
-              {/* Generated URL */}
-              {generatedUrl && (
-                <div className="bg-white rounded-2xl shadow-xl p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-gray-900">Generated {rampType === 'ON' ? 'Onramp' : 'Offramp'} URL</h3>
-                    <button
-                      onClick={() => copyToClipboard(generatedUrl)}
-                      className="flex items-center text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1 rounded-lg"
-                    >
-                      <Copy className="w-4 h-4 mr-1" />
-                      Copy
-                    </button>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                    <code className="text-sm break-all text-gray-800">{generatedUrl}</code>
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => window.open(generatedUrl, '_blank')}
-                      className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Open in New Tab
-                    </button>
-                    <button
-                      onClick={() => setShowCode(!showCode)}
-                      className="flex items-center bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-                    >
-                      <Code className="w-4 h-4 mr-2" />
-                      {showCode ? 'Hide' : 'Show'} Code
-                    </button>
-                  </div>
-                </div>
-              )}
+                        {/* Main Content */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            
+                            {/* Left Panel - Configuration */}
+                            <div className="lg:col-span-1">
+                                <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-4">
+                                    
+                                    {/* Tab Navigation */}
+                                    <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+                                        <button
+                                            onClick={() => setActiveTab('configure')}
+                                            className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
+                                                activeTab === 'configure' 
+                                                    ? 'bg-white text-blue-600 shadow-sm' 
+                                                    : 'text-gray-600 hover:text-gray-900'
+                                            }`}
+                                        >
+                                            <SettingsIcon />
+                                            <span className="ml-2">Configure</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('currencies')}
+                                            className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
+                                                activeTab === 'currencies' 
+                                                    ? 'bg-white text-blue-600 shadow-sm' 
+                                                    : 'text-gray-600 hover:text-gray-900'
+                                            }`}
+                                        >
+                                            <DollarSignIcon />
+                                            <span className="ml-2">Currencies</span>
+                                        </button>
+                                    </div>
 
-              {/* API Integration */}
-              <div className="bg-white rounded-2xl shadow-xl p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">API Integration</h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Endpoint
-                    </label>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <code className="text-sm text-blue-600">POST {apiEndpoints[selectedProvider]}</code>
-                    </div>
-                  </div>
+                                    {activeTab === 'configure' && (
+                                        <div className="space-y-6">
+                                            {/* Ramp Type Selection */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Ramp Type
+                                                </label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <button
+                                                        onClick={() => setRampType('ON')}
+                                                        className={`p-3 rounded-lg text-sm font-medium transition-colors ${
+                                                            rampType === 'ON'
+                                                                ? 'bg-blue-600 text-white'
+                                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                        }`}
+                                                    >
+                                                        Buy Crypto (Onramp)
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setRampType('OFF')}
+                                                        className={`p-3 rounded-lg text-sm font-medium transition-colors ${
+                                                            rampType === 'OFF'
+                                                                ? 'bg-blue-600 text-white'
+                                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                        }`}
+                                                    >
+                                                        Sell Crypto (Offramp)
+                                                    </button>
+                                                </div>
+                                            </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Request Body
-                    </label>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <pre className="text-sm overflow-x-auto text-gray-800">{getRequestBody()}</pre>
-                    </div>
-                  </div>
+                                            {/* Fiat Amount */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Fiat Amount
+                                                </label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        value={formData.fiatAmount}
+                                                        onChange={(e) => setFormData({...formData, fiatAmount: e.target.value})}
+                                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        placeholder="300"
+                                                        min="1"
+                                                        max="10000"
+                                                    />
+                                                    <div className="absolute right-3 top-3 text-gray-400">
+                                                        {formData.fiatCurrency}
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                  {showCode && (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          JavaScript Example
-                        </label>
-                        <div className="bg-gray-900 text-green-400 p-4 rounded-lg">
-                          <pre className="text-sm overflow-x-auto">{getCodeExample()}</pre>
-                        </div>
-                      </div>
+                                            {/* Fiat Currency */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Fiat Currency
+                                                </label>
+                                                <select
+                                                    value={formData.fiatCurrency}
+                                                    onChange={(e) => setFormData({...formData, fiatCurrency: e.target.value})}
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                >
+                                                    {popularCurrencies.fiat.map(currency => (
+                                                        <option key={currency} value={currency}>{currency}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          cURL Example
-                        </label>
-                        <div className="bg-gray-900 text-green-400 p-4 rounded-lg">
-                          <pre className="text-sm overflow-x-auto">{getCurlExample()}</pre>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+                                            {/* Crypto Currency */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Cryptocurrency
+                                                </label>
+                                                <select
+                                                    value={formData.cryptoCurrency.symbol}
+                                                    onChange={(e) => {
+                                                        const crypto = popularCurrencies.crypto.find(c => c.symbol === e.target.value);
+                                                        setFormData({...formData, cryptoCurrency: crypto});
+                                                    }}
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                >
+                                                    {popularCurrencies.crypto.map(crypto => (
+                                                        <option key={crypto.symbol} value={crypto.symbol}>
+                                                            {crypto.symbol} - {crypto.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-              {/* Integration Steps */}
-              <div className="bg-white rounded-2xl shadow-xl p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Integration Steps</h3>
-                
-                <div className="space-y-4">
-                  <div className="flex items-start">
-                    <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium mr-4 mt-1">1</div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">Get API Credentials</h4>
-                      <p className="text-sm text-gray-600">
-                        Fill out the onboarding form and complete KYB to receive your Client ID and Client Secret
-                      </p>
-                    </div>
-                  </div>
+                                            {/* Wallet Address */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Wallet Address
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.walletAddress}
+                                                    onChange={(e) => setFormData({...formData, walletAddress: e.target.value})}
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                                                    placeholder="0x..."
+                                                />
+                                            </div>
 
-                  <div className="flex items-start">
-                    <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium mr-4 mt-1">2</div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">Configure Provider Keys</h4>
-                      <p className="text-sm text-gray-600">
-                        Configure your API keys for MoonPay, Transak, and Ramp Network through the Venly Portal
-                      </p>
-                    </div>
-                  </div>
+                                            {/* Email */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Email
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    value={formData.email}
+                                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    placeholder="user@example.com"
+                                                />
+                                            </div>
 
-                  <div className="flex items-start">
-                    <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium mr-4 mt-1">3</div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">Make API Request</h4>
-                      <p className="text-sm text-gray-600">
-                        Use the generated code above to create onramp URLs for your users
-                      </p>
-                    </div>
-                  </div>
+                                            {/* Redirect URL */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Redirect URL
+                                                </label>
+                                                <input
+                                                    type="url"
+                                                    value={formData.redirectUrl}
+                                                    onChange={(e) => setFormData({...formData, redirectUrl: e.target.value})}
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    placeholder="https://yourapp.com/success"
+                                                />
+                                            </div>
 
-                  <div className="flex items-start">
-                    <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium mr-4 mt-1">4</div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">Handle Response</h4>
-                      <p className="text-sm text-gray-600">
-                        Redirect users to the generated URL or embed it in your application
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                                            {/* Country Code (for Ramp Network) */}
+                                            {selectedProvider === 'RAMP_NETWORK' && (
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Country Code
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.selectedCountryCode}
+                                                        onChange={(e) => setFormData({...formData, selectedCountryCode: e.target.value})}
+                                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        placeholder="US"
+                                                        maxLength="2"
+                                                    />
+                                                </div>
+                                            )}
 
-              {/* Security & Compliance */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
-                <div className="flex items-start">
-                  <Shield className="w-5 h-5 text-yellow-600 mr-3 mt-1" />
-                  <div>
-                    <h4 className="font-medium text-yellow-800 mb-2">Security & Compliance</h4>
-                    <ul className="text-sm text-yellow-700 space-y-1">
-                      <li>• This is a sandbox environment for testing purposes</li>
-                      <li>• In production, you must configure your own API keys for full control</li>
-                      <li>• All providers are KYC/AML compliant</li>
-                      <li>• Validate all user inputs and implement proper error handling</li>
-                      <li>• Configure webhooks to receive payment notifications</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                                            {/* Generate Button */}
+                                            <button
+                                                onClick={generateOnrampUrl}
+                                                disabled={isLoading}
+                                                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                                            >
+                                                {isLoading ? (
+                                                    <div className="flex items-center">
+                                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                                        Generating...
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center">
+                                                        <PlayIcon />
+                                                        <span className="ml-2">Generate {rampType === 'ON' ? 'Onramp' : 'Offramp'} URL</span>
+                                                    </div>
+                                                )}
+                                            </button>
+                                        </div>
+                                    )}
 
-        {/* Footer */}
-        <div className="mt-12 text-center text-gray-600">
-          <p>
-            Built with Venly API • 
-            <a href="https://docs.venly.io" className="text-blue-600 hover:text-blue-700 ml-1">Documentation</a> • 
-            <a href="https://portal.venly.io" className="text-blue-600 hover:text-blue-700 ml-2">Portal</a> •
-            <a href="mailto:support@venly.io" className="text-blue-600 hover:text-blue-700 ml-2">Support</a>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
+                                    {activeTab === 'currencies' && (
+                                        <div className="space-y-6">
+                                            <div className="text-center">
+                                                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                                    Supported Currencies
+                                                </h3>
+                                                <p className="text-sm text-gray-600">
+                                                    {providers[selectedProvider].name} supported currencies
+                                                </p>
+                                            </div>
 
-export default VenlyOnrampWidget;}
-                        <div className="bg-white rounded-2xl shadow-xl p-8">
-                            <div className="text-center">
-                                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                                    Widget Content Loading...
-                                </h2>
-                                <p className="text-gray-600">
-                                    Replace this section with your complete widget JSX from the previous artifact.
-                                </p>
+                                            {loadingCurrencies ? (
+                                                <div className="text-center py-8">
+                                                    <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                                                    <p className="text-sm text-gray-600">Loading currencies...</p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <h4 className="font-medium text-gray-900 mb-2">Fiat Currencies</h4>
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            {supportedCurrencies.fiat.slice(0, 12).map(currency => (
+                                                                <div key={currency.symbol} className="bg-gray-50 p-2 rounded text-center">
+                                                                    <span className="text-sm font-medium">{currency.symbol}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <h4 className="font-medium text-gray-900 mb-2">Cryptocurrencies</h4>
+                                                        <div className="space-y-2">
+                                                            {supportedCurrencies.crypto.slice(0, 8).map(crypto => (
+                                                                <div key={crypto.symbol} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                                                    <span className="text-sm font-medium">{crypto.symbol}</span>
+                                                                    <span className="text-xs text-gray-500">{crypto.network}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
+
+                            {/* Right Panel - Results & Code */}
+                            <div className="lg:col-span-2">
+                                <div className="space-y-6">
+                                    
+                                    {/* Provider Details */}
+                                    <div className="bg-white rounded-2xl shadow-xl p-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center">
+                                                <span className="text-3xl mr-3">{providers[selectedProvider].logo}</span>
+                                                <div>
+                                                    <h2 className="text-2xl font-bold text-gray-900">
+                                                        {providers[selectedProvider].name}
+                                                    </h2>
+                                                    <p className="text-gray-600">{providers[selectedProvider].description}</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setShowProviderDetails(!showProviderDetails)}
+                                                className="text-blue-600 hover:text-blue-700"
+                                            >
+                                                {showProviderDetails ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                                            </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                <div className="flex items-center mb-2">
+                                                    <ClockIcon />
+                                                    <h4 className="font-medium text-gray-900 ml-2">Processing Time</h4>
+                                                </div>
+                                                <p className="text-sm text-gray-600">{providers[selectedProvider].processingTime}</p>
+                                            </div>
+                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                <div className="flex items-center mb-2">
+                                                    <DollarSignIcon />
+                                                    <h4 className="font-medium text-gray-900 ml-2">Fees</h4>
+                                                </div>
+                                                <p className="text-sm text-gray-600">{providers[selectedProvider].fees}</p>
+                                            </div>
+                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                <div className="flex items-center mb-2">
+                                                    <GlobeIcon />
+                                                    <h4 className="font-medium text-gray-900 ml-2">Coverage</h4>
+                                                </div>
+                                                <p className="text-sm text-gray-600">{providers[selectedProvider].supported[0]}</p>
+                                            </div>
+                                        </div>
+
+                                        {showProviderDetails && (
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium text-gray-900 mb-3">Features</h4>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    {providers[selectedProvider].features.map((feature, idx) => (
+                                                        <div key={idx} className="flex items-center">
+                                                            <CheckIcon />
+                                                            <span className="text-sm text-gray-700 ml-2">{feature}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Generated URL */}
+                                    {generatedUrl && (
+                                        <div className="bg-white rounded-2xl shadow-xl p-6">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h3 className="text-xl font-bold text-gray-900">Generated {rampType === 'ON' ? 'Onramp' : 'Offramp'} URL</h3>
+                                                <button
+                                                    onClick={() => copyToClipboard(generatedUrl)}
+                                                    className="flex items-center text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1 rounded-lg"
+                                                >
+                                                    <CopyIcon />
+                                                    <span className="ml-1">Copy</span>
+                                                </button>
+                                            </div>
+                                            <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                                                <code className="text-sm break-all text-gray-800">{generatedUrl}</code>
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={() => window.open(generatedUrl, '_blank')}
+                                                    className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                                                >
+                                                    <ExternalLinkIcon />
+                                                    <span className="ml-2">Open in New Tab</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => setShowCode(!showCode)}
+                                                    className="flex items-center bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                                                >
+                                                    <CodeIcon />
+                                                    <span className="ml-2">{showCode ? 'Hide' : 'Show'} Code</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* API Integration */}
+                                    <div className="bg-white rounded-2xl shadow-xl p-6">
+                                        <h3 className="text-xl font-bold text-gray-900 mb-4">API Integration</h3>
+                                        
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Endpoint
+                                                </label>
+                                                <div className="bg-gray-50 p-3 rounded-lg">
+                                                    <code className="text-sm text-blue-600">POST {apiEndpoints[selectedProvider]}</code>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Request Body
+                                                </label>
+                                                <div className="bg-gray-50 p-4 rounded-lg">
+                                                    <pre className="text-sm overflow-x-auto text-gray-800">{getRequestBody()}</pre>
+                                                </div>
+                                            </div>
+
+                                            {showCode && (
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            JavaScript Example
+                                                        </label>
+                                                        <div className="bg-gray-900 text-green-400 p-4 rounded-lg">
+                                                            <pre className="text-sm overflow-x-auto">{getCodeExample()}</pre>
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            cURL Example
+                                                        </label>
+                                                        <div className="bg-gray-900 text-green-400 p-4 rounded-lg">
+                                                            <pre className="text-sm overflow-x-auto">{getCurlExample()}</pre>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Integration Steps */}
+                                    <div className="bg-white rounded-2xl shadow-xl p-6">
+                                        <h3 className="text-xl font-bold text-gray-900 mb-4">Integration Steps</h3>
+                                        
+                                        <div className="space-y-4">
+                                            <div className="flex items-start">
+                                                <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium mr-4 mt-1">1</div>
+                                                <div>
+                                                    <h4 className="font-medium text-gray-900">Get API Credentials</h4>
+                                                    <p className="text-sm text-gray-600">
+                                                        Fill out the onboarding form and complete KYB to receive your Client ID and Client Secret
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-start">
+                                                <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium mr-4 mt-1">2</div>
+                                                <div>
+                                                    <h4 className="font-medium text-gray-900">Configure Provider Keys</h4>
+                                                    <p className="text-sm text-gray-600">
+                                                        Configure your API keys for MoonPay, Transak, and Ramp Network through the Venly Portal
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-start">
+                                                <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium mr-4 mt-1">3</div>
+                                                <div>
+                                                    <h4 className="font-medium text-gray-900">Make API Request</h4>
+                                                    <p className="text-sm text-gray-600">
+                                                        Use the generated code above to create onramp URLs for your users
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-start">
+                                                <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium mr-4 mt-1">4</div>
+                                                <div>
+                                                    <h4 className="font-medium text-gray-900">Handle Response</h4>
+                                                    <p className="text-sm text-gray-600">
+                                                        Redirect users to the generated URL or embed it in your application
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Security & Compliance */}
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
+                                        <div className="flex items-start">
+                                            <ShieldIcon />
+                                            <div className="ml-3">
+                                                <h4 className="font-medium text-yellow-800 mb-2">Security & Compliance</h4>
+                                                <ul className="text-sm text-yellow-700 space-y-1">
+                                                    <li>• This is a sandbox environment for testing purposes</li>
+                                                    <li>• In production, you must configure your own API keys for full control</li>
+                                                    <li>• All providers are KYC/AML compliant</li>
+                                                    <li>• Validate all user inputs and implement proper error handling</li>
+                                                    <li>• Configure webhooks to receive payment notifications</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="mt-12 text-center text-gray-600">
+                            <p>
+                                Built with Venly API • 
+                                <a href="https://docs.venly.io" className="text-blue-600 hover:text-blue-700 ml-1">Documentation</a> • 
+                                <a href="https://portal.venly.io" className="text-blue-600 hover:text-blue-700 ml-2">Portal</a> •
+                                <a href="mailto:support@venly.io" className="text-blue-600 hover:text-blue-700 ml-2">Support</a>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -1171,9 +1130,9 @@ export default VenlyOnrampWidget;}
             
             // Render the widget
             ReactDOM.render(
-                <ErrorBoundary>
-                    <VenlyOnrampWidget />
-                </ErrorBoundary>,
+                React.createElement(ErrorBoundary, null, 
+                    React.createElement(VenlyOnrampWidget)
+                ),
                 document.getElementById('venly-onramp-widget')
             );
             
