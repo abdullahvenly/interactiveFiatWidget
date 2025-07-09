@@ -335,6 +335,12 @@
                 RAMP_NETWORK: 'https://api-pay-sandbox.venly.io/fiat-ramp/RAMP_NETWORK/on'
             };
 
+            const currencyEndpoints = {
+                TRANSAK: 'https://api-pay-sandbox.venly.io/fiat-ramp/TRANSAK/currencies',
+                MOONPAY: 'https://api-pay-sandbox.venly.io/fiat-ramp/MOONPAY/currencies',
+                RAMP_NETWORK: 'https://api-pay-sandbox.venly.io/fiat-ramp/RAMP_NETWORK/currencies'
+            };
+
             const authEndpoints = {
                 sandbox: 'https://login-sandbox.venly.io/auth/realms/Arkane/protocol/openid-connect/token',
                 production: 'https://login.venly.io/auth/realms/Arkane/protocol/openid-connect/token'
@@ -505,6 +511,9 @@
                     setAuthError('');
                     trackEvent('authentication_success', 'auth', credentials.environment);
                     
+                    // Fetch currencies after successful authentication
+                    fetchSupportedCurrencies(selectedProvider);
+                    
                 } catch (error) {
                     setAuthError(error.message);
                     trackEvent('authentication_error', 'auth', error.message);
@@ -521,41 +530,6 @@
                 if (!tokenExpiry) return 0;
                 const remaining = Math.max(0, tokenExpiry - Date.now());
                 return Math.floor(remaining / 1000);
-            };
-
-            // Simulate fetching supported currencies
-            const fetchSupportedCurrencies = async (provider) => {
-                setLoadingCurrencies(true);
-                
-                // Simulate API call delay
-                setTimeout(() => {
-                    // Mock response based on the documentation
-                    const mockCurrencies = {
-                        fiat: [
-                            { name: 'US Dollar', symbol: 'USD', rampType: ['ON', 'OFF'] },
-                            { name: 'Euro', symbol: 'EUR', rampType: ['ON', 'OFF'] },
-                            { name: 'British Pound', symbol: 'GBP', rampType: ['ON', 'OFF'] },
-                            { name: 'Canadian Dollar', symbol: 'CAD', rampType: ['ON', 'OFF'] },
-                            { name: 'Australian Dollar', symbol: 'AUD', rampType: ['ON', 'OFF'] },
-                            { name: 'Japanese Yen', symbol: 'JPY', rampType: ['ON', 'OFF'] },
-                            { name: 'Swiss Franc', symbol: 'CHF', rampType: ['ON', 'OFF'] },
-                            { name: 'Swedish Krona', symbol: 'SEK', rampType: ['ON', 'OFF'] }
-                        ],
-                        crypto: [
-                            { name: 'Ethereum', symbol: 'ETH', network: 'ethereum', rampType: ['ON', 'OFF'] },
-                            { name: 'Bitcoin', symbol: 'BTC', network: 'mainnet', rampType: ['ON', 'OFF'] },
-                            { name: 'USD Coin', symbol: 'USDC', network: 'ethereum', rampType: ['ON', 'OFF'] },
-                            { name: 'Tether', symbol: 'USDT', network: 'ethereum', rampType: ['ON', 'OFF'] },
-                            { name: 'Polygon', symbol: 'MATIC', network: 'polygon', rampType: ['ON', 'OFF'] },
-                            { name: 'Binance Coin', symbol: 'BNB', network: 'bsc', rampType: ['ON', 'OFF'] },
-                            { name: 'Solana', symbol: 'SOL', network: 'solana', rampType: ['ON', 'OFF'] },
-                            { name: 'Avalanche', symbol: 'AVAX', network: 'avaxcchain', rampType: ['ON', 'OFF'] }
-                        ]
-                    };
-                    
-                    setSupportedCurrencies(mockCurrencies);
-                    setLoadingCurrencies(false);
-                }, 1000);
             };
 
             const generateOnrampUrl = async () => {
@@ -703,6 +677,13 @@ curl -X POST '${apiEndpoints[selectedProvider]}' \\
             useEffect(() => {
                 fetchSupportedCurrencies(selectedProvider);
             }, [selectedProvider]);
+
+            // Auto-refresh currencies when token becomes valid
+            useEffect(() => {
+                if (isTokenValid()) {
+                    fetchSupportedCurrencies(selectedProvider);
+                }
+            }, [accessToken, selectedProvider]);
 
             // Track provider selection
             useEffect(() => {
@@ -1028,9 +1009,13 @@ curl -X POST '${apiEndpoints[selectedProvider]}' \\
                                                     onChange={(e) => setFormData({...formData, fiatCurrency: e.target.value})}
                                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 >
-                                                    {popularCurrencies.fiat.map(currency => (
-                                                        <option key={currency} value={currency}>{currency}</option>
-                                                    ))}
+                                                    {supportedCurrencies.fiat
+                                                        .filter(currency => currency.rampType.includes(rampType))
+                                                        .map(currency => (
+                                                            <option key={currency.symbol} value={currency.symbol}>
+                                                                {currency.symbol} - {currency.name}
+                                                            </option>
+                                                        ))}
                                                 </select>
                                             </div>
 
@@ -1040,18 +1025,23 @@ curl -X POST '${apiEndpoints[selectedProvider]}' \\
                                                     Cryptocurrency
                                                 </label>
                                                 <select
-                                                    value={formData.cryptoCurrency.symbol}
+                                                    value={`${formData.cryptoCurrency.symbol}-${formData.cryptoCurrency.network}`}
                                                     onChange={(e) => {
-                                                        const crypto = popularCurrencies.crypto.find(c => c.symbol === e.target.value);
-                                                        setFormData({...formData, cryptoCurrency: crypto});
+                                                        const [symbol, network] = e.target.value.split('-');
+                                                        const crypto = supportedCurrencies.crypto.find(c => c.symbol === symbol && c.network === network);
+                                                        if (crypto) {
+                                                            setFormData({...formData, cryptoCurrency: crypto});
+                                                        }
                                                     }}
                                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 >
-                                                    {popularCurrencies.crypto.map(crypto => (
-                                                        <option key={crypto.symbol} value={crypto.symbol}>
-                                                            {crypto.symbol} - {crypto.name}
-                                                        </option>
-                                                    ))}
+                                                    {supportedCurrencies.crypto
+                                                        .filter(crypto => crypto.rampType.includes(rampType))
+                                                        .map(crypto => (
+                                                            <option key={`${crypto.symbol}-${crypto.network}`} value={`${crypto.symbol}-${crypto.network}`}>
+                                                                {crypto.symbol} ({crypto.network}) - {crypto.name}
+                                                            </option>
+                                                        ))}
                                                 </select>
                                             </div>
 
@@ -1162,31 +1152,83 @@ curl -X POST '${apiEndpoints[selectedProvider]}' \\
                                             {loadingCurrencies ? (
                                                 <div className="text-center py-8">
                                                     <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                                                    <p className="text-sm text-gray-600">Loading currencies...</p>
+                                                    <p className="text-sm text-gray-600">
+                                                        {isTokenValid() ? `Loading ${providers[selectedProvider].name} currencies...` : 'Loading currencies...'}
+                                                    </p>
                                                 </div>
                                             ) : (
                                                 <div className="space-y-4">
+                                                    {/* Refresh Button */}
+                                                    <div className="flex justify-between items-center">
+                                                        <div className="text-sm text-gray-600">
+                                                            {isTokenValid() ? `Live data from ${providers[selectedProvider].name}` : 'Sample data (authenticate for live data)'}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => fetchSupportedCurrencies(selectedProvider)}
+                                                            disabled={!isTokenValid() || loadingCurrencies}
+                                                            className="text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            Refresh
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Fiat Currencies */}
                                                     <div>
-                                                        <h4 className="font-medium text-gray-900 mb-2">Fiat Currencies</h4>
-                                                        <div className="grid grid-cols-3 gap-2">
-                                                            {supportedCurrencies.fiat.slice(0, 12).map(currency => (
-                                                                <div key={currency.symbol} className="bg-gray-50 p-2 rounded text-center">
-                                                                    <span className="text-sm font-medium">{currency.symbol}</span>
+                                                        <h4 className="font-medium text-gray-900 mb-2">
+                                                            Fiat Currencies ({supportedCurrencies.fiat.length})
+                                                        </h4>
+                                                        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                                                            {supportedCurrencies.fiat.map((currency, index) => (
+                                                                <div key={`${currency.symbol}-${index}`} className="bg-gray-50 p-2 rounded">
+                                                                    <div className="flex justify-between items-center">
+                                                                        <span className="text-sm font-medium">{currency.symbol}</span>
+                                                                        <div className="flex space-x-1">
+                                                                            {currency.rampType.includes('ON') && (
+                                                                                <span className="text-xs bg-green-100 text-green-800 px-1 rounded">ON</span>
+                                                                            )}
+                                                                            {currency.rampType.includes('OFF') && (
+                                                                                <span className="text-xs bg-blue-100 text-blue-800 px-1 rounded">OFF</span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-xs text-gray-500 mt-1">{currency.name}</div>
                                                                 </div>
                                                             ))}
                                                         </div>
                                                     </div>
 
+                                                    {/* Cryptocurrencies */}
                                                     <div>
-                                                        <h4 className="font-medium text-gray-900 mb-2">Cryptocurrencies</h4>
-                                                        <div className="space-y-2">
-                                                            {supportedCurrencies.crypto.slice(0, 8).map(crypto => (
-                                                                <div key={crypto.symbol} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                                                    <span className="text-sm font-medium">{crypto.symbol}</span>
-                                                                    <span className="text-xs text-gray-500">{crypto.network}</span>
+                                                        <h4 className="font-medium text-gray-900 mb-2">
+                                                            Cryptocurrencies ({supportedCurrencies.crypto.length})
+                                                        </h4>
+                                                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                                                            {supportedCurrencies.crypto.map((crypto, index) => (
+                                                                <div key={`${crypto.symbol}-${crypto.network}-${index}`} className="bg-gray-50 p-2 rounded">
+                                                                    <div className="flex justify-between items-center">
+                                                                        <div className="flex items-center space-x-2">
+                                                                            <span className="text-sm font-medium">{crypto.symbol}</span>
+                                                                            <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">{crypto.network}</span>
+                                                                        </div>
+                                                                        <div className="flex space-x-1">
+                                                                            {crypto.rampType.includes('ON') && (
+                                                                                <span className="text-xs bg-green-100 text-green-800 px-1 rounded">ON</span>
+                                                                            )}
+                                                                            {crypto.rampType.includes('OFF') && (
+                                                                                <span className="text-xs bg-blue-100 text-blue-800 px-1 rounded">OFF</span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-xs text-gray-500 mt-1">{crypto.name}</div>
                                                                 </div>
                                                             ))}
                                                         </div>
+                                                    </div>
+
+                                                    {/* API Info */}
+                                                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                                                        <h5 className="text-sm font-medium text-blue-900 mb-1">API Endpoint</h5>
+                                                        <code className="text-xs text-blue-800">GET {currencyEndpoints[selectedProvider]}</code>
                                                     </div>
                                                 </div>
                                             )}
@@ -1298,6 +1340,15 @@ curl -X POST '${apiEndpoints[selectedProvider]}' \\
                                         <h3 className="text-xl font-bold text-gray-900 mb-4">API Integration</h3>
                                         
                                         <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Currencies Endpoint
+                                                </label>
+                                                <div className="bg-gray-50 p-3 rounded-lg">
+                                                    <code className="text-sm text-blue-600">GET {currencyEndpoints[selectedProvider]}</code>
+                                                </div>
+                                            </div>
+                                            
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                                     Authentication Endpoint
