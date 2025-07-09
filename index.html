@@ -3,33 +3,1196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Venly Onramp Widget</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <title>Venly Onramp Interactive Widget</title>
+    <meta name="description" content="Interactive configuration tool for Venly's fiat-to-crypto onramp solutions">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Venly Onramp Interactive Widget">
+    <meta property="og:description" content="Configure and test Venly's onramp providers with live code generation">
+    <meta property="og:image" content="https://your-username.github.io/your-repo-name/assets/preview.png">
+    <meta property="og:url" content="https://your-username.github.io/your-repo-name">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Venly Onramp Interactive Widget">
+    <meta name="twitter:description" content="Configure and test Venly's onramp providers with live code generation">
+    <meta name="twitter:image" content="https://your-username.github.io/your-repo-name/assets/preview.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    
+    <!-- React CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- Custom Styles -->
     <style>
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        .github-corner { position: absolute; top: 0; right: 0; z-index: 1000; }
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .github-corner {
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 1000;
+            color: #151513;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+        
+        .github-corner:hover {
+            opacity: 1;
+        }
+        
+        .github-corner:hover .octo-arm {
+            animation: octocat-wave 560ms ease-in-out;
+        }
+        
+        @keyframes octocat-wave {
+            0%, 100% { transform: rotate(0); }
+            20%, 60% { transform: rotate(-25deg); }
+            40%, 80% { transform: rotate(10deg); }
+        }
+        
+        .error-fallback {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 0.5rem;
+            margin: 2rem;
+        }
+        
+        .error-fallback h2 {
+            color: #dc2626;
+            margin-bottom: 1rem;
+        }
+        
+        .error-fallback p {
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+        
+        .error-fallback button {
+            background: #3b82f6;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .error-fallback button:hover {
+            background: #2563eb;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .github-corner {
+                width: 60px;
+                height: 60px;
+            }
+        }
+        
+        /* Accessibility improvements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
     </style>
 </head>
 <body>
-    <!-- GitHub corner -->
-    <a href="https://github.com/your-username/venly-onramp-widget" class="github-corner">
-        <svg width="80" height="80" viewBox="0 0 250 250" fill="#151513" style="position: absolute; top: 0; right: 0;">
+    <!-- GitHub Corner -->
+    <a href="https://github.com/your-username/venly-onramp-widget" class="github-corner" aria-label="View source on GitHub">
+        <svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; right: 0; border: 0;" aria-hidden="true">
             <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
             <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
             <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path>
         </svg>
     </a>
     
-    <div id="venly-onramp-widget"></div>
+    <!-- Loading Screen -->
+    <div id="loading" class="loading-container">
+        <div>
+            <div class="loading-spinner"></div>
+            <p style="margin-top: 20px; color: #6b7280; font-weight: 500;">Loading Venly Onramp Widget...</p>
+        </div>
+    </div>
     
-    <script type="text/babel">
-        // Paste your widget code here
-        // ... (The complete widget component)
+    <!-- Widget Container -->
+    <div id="venly-onramp-widget" style="display: none;"></div>
+    
+    <!-- Error Fallback -->
+    <div id="error-fallback" class="error-fallback">
+        <h2>Widget Loading Error</h2>
+        <p>There was an error loading the interactive widget. This might be due to:</p>
+        <ul style="text-align: left; color: #6b7280; margin: 1rem 0;">
+            <li>• Network connectivity issues</li>
+            <li>• JavaScript being disabled</li>
+            <li>• Browser compatibility issues</li>
+        </ul>
+        <button onclick="window.location.reload()">Refresh Page</button>
+        <p style="margin-top: 1rem; font-size: 0.875rem;">
+            <a href="https://docs.venly.io" style="color: #3b82f6;">View Static Documentation</a>
+        </p>
+    </div>
+    
+    <!-- Analytics (Optional) -->
+    <script>
+        // Google Analytics (replace with your tracking ID)
+        // window.gtag('config', 'GA_TRACKING_ID');
         
-        ReactDOM.render(<VenlyOnrampWidget />, document.getElementById('venly-onramp-widget'));
+        // Custom analytics
+        function trackEvent(action, category, label) {
+            // Replace with your analytics service
+            console.log('Event:', action, category, label);
+        }
+        
+        // Track page load
+        window.addEventListener('load', function() {
+            trackEvent('page_load', 'widget', 'venly_onramp');
+        });
+    </script>
+    
+    <!-- Widget Script -->
+    <script type="text/babel">
+        // Error boundary component
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+            
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+            
+            componentDidCatch(error, errorInfo) {
+                console.error('Widget Error:', error, errorInfo);
+                trackEvent('error', 'widget', error.message);
+            }
+            
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+                                <div className="text-red-600 mb-4">
+                                    <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.132 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-900 mb-2">Widget Error</h2>
+                                <p className="text-gray-600 mb-4">Sorry, there was an error loading the widget.</p>
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                                >
+                                    Refresh Page
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+                
+                return this.props.children;
+            }
+        }
+        
+        // Main widget component (paste your updated widget code here)
+        const VenlyOnrampWidget = () => {
+            const [selectedProvider, setSelectedProvider] = React.useState('TRANSAK');
+            const [formData, setFormData] = React.useState({
+                fiatAmount: '300',
+                fiatCurrency: 'USD',
+                cryptoAmount: '0.15',
+                cryptoCurrency: { network: 'ethereum', symbol: 'ETH', name: 'Ethereum' },
+                email: 'user@example.com',
+                walletAddress: '0x3FE9a7D68C6a4a2d6575A6C803E4CDF9340E370E',
+                redirectUrl: 'https://yourapp.com/success',
+                selectedCountryCode: 'US'
+            });
+            const [isLoading, setIsLoading] = React.useState(false);
+            const [generatedUrl, setGeneratedUrl] = React.useState('');
+            const [activeTab, setActiveTab] = React.useState('configure');
+            const [showCode, setShowCode] = React.useState(false);
+            const [supportedCurrencies, setSupportedCurrencies] = React.useState({ fiat: [], crypto: [] });
+            const [loadingCurrencies, setLoadingCurrencies] = React.useState(false);
+            const [showProviderDetails, setShowProviderDetails] = React.useState(false);
+            const [rampType, setRampType] = React.useState('ON');
+
+            const providers = {
+                TRANSAK: {
+                    name: 'Transak',
+                    description: 'Global leader in fiat-to-crypto infrastructure',
+                    features: ['150+ Countries', 'KYC/AML Compliant', 'Credit/Debit Cards', 'Bank Transfers', 'Apple Pay/Google Pay', 'Multiple Cryptocurrencies'],
+                    fees: '0.99% - 5.5%',
+                    processingTime: '10-30 minutes',
+                    supported: ['150+ countries', '100+ cryptocurrencies', '50+ fiat currencies'],
+                    logo: '🏦',
+                    color: 'blue',
+                    highlights: ['Most global coverage', 'Established provider', 'Multiple payment methods'],
+                    website: 'https://transak.com'
+                },
+                MOONPAY: {
+                    name: 'MoonPay',
+                    description: 'Simple and fast crypto purchases',
+                    features: ['160+ Countries', 'Fast Processing', 'Low Fees', 'Mobile Optimized', 'Instant Purchases', 'Premium Support'],
+                    fees: '1% - 4.5%',
+                    processingTime: '5-15 minutes',
+                    supported: ['160+ countries', '80+ cryptocurrencies', '40+ fiat currencies'],
+                    logo: '🌙',
+                    color: 'purple',
+                    highlights: ['Fastest processing', 'Mobile-first design', 'Low fees'],
+                    website: 'https://moonpay.com'
+                },
+                RAMP_NETWORK: {
+                    name: 'Ramp Network',
+                    description: 'Enterprise-grade fiat-to-crypto infrastructure',
+                    features: ['170+ Countries', 'Enterprise Focused', 'API-First', 'White Label', 'Custom Branding', 'Advanced Analytics'],
+                    fees: '0.49% - 2.9%',
+                    processingTime: '5-10 minutes',
+                    supported: ['170+ countries', '60+ cryptocurrencies', '45+ fiat currencies'],
+                    logo: '🚀',
+                    color: 'green',
+                    highlights: ['Lowest fees', 'Enterprise features', 'Custom branding'],
+                    website: 'https://ramp.network'
+                }
+            };
+
+            const popularCurrencies = {
+                fiat: ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK'],
+                crypto: [
+                    { symbol: 'ETH', network: 'ethereum', name: 'Ethereum' },
+                    { symbol: 'BTC', network: 'mainnet', name: 'Bitcoin' },
+                    { symbol: 'USDC', network: 'ethereum', name: 'USD Coin' },
+                    { symbol: 'USDT', network: 'ethereum', name: 'Tether' },
+                    { symbol: 'MATIC', network: 'polygon', name: 'Polygon' },
+                    { symbol: 'BNB', network: 'bsc', name: 'Binance Coin' },
+                    { symbol: 'SOL', network: 'solana', name: 'Solana' },
+                    { symbol: 'AVAX', network: 'avaxcchain', name: 'Avalanche' }
+                ]
+            };
+
+            const generateOnrampUrl = async () => {
+                setIsLoading(true);
+                trackEvent('generate_url', 'widget', selectedProvider);
+                
+                // Simulate API call
+                setTimeout(() => {
+                    const baseUrls = {
+                        TRANSAK: 'https://global-stg.transak.com',
+                        MOONPAY: 'https://buy-sandbox.moonpay.com',
+                        RAMP_NETWORK: 'https://app.demo.ramp.network'
+                    };
+                    
+                    const params = new URLSearchParams({
+                        fiatAmount: formData.fiatAmount,
+                        fiatCurrency: formData.fiatCurrency,
+                        cryptoAmount: formData.cryptoAmount,
+                        cryptoCurrency: formData.cryptoCurrency.symbol,
+                        network: formData.cryptoCurrency.network,
+                        walletAddress: formData.walletAddress,
+                        email: formData.email,
+                        redirectUrl: formData.redirectUrl
+                    });
+                    
+                    if (selectedProvider === 'RAMP_NETWORK') {
+                        params.append('selectedCountryCode', formData.selectedCountryCode);
+                    }
+                    
+                    const url = `${baseUrls[selectedProvider]}?${params.toString()}`;
+                    setGeneratedUrl(url);
+                    setIsLoading(false);
+                }, 2000);
+            };
+
+            // Track provider selection
+            React.useEffect(() => {
+                trackEvent('provider_selected', 'widget', selectedProvider);
+            }, [selectedProvider]);
+
+            // Your complete widget JSX goes here
+import React, { useState, useEffect } from 'react';
+import { Copy, ExternalLink, Play, Code, Settings, CreditCard, Globe, Shield, Check, AlertCircle, Info, Zap, Users, TrendingUp, Clock, DollarSign, Smartphone, ChevronRight, ChevronDown, X } from 'lucide-react';
+
+const VenlyOnrampWidget = () => {
+  const [selectedProvider, setSelectedProvider] = useState('TRANSAK');
+  const [formData, setFormData] = useState({
+    fiatAmount: '300',
+    fiatCurrency: 'USD',
+    cryptoAmount: '0.15',
+    cryptoCurrency: { network: 'ethereum', symbol: 'ETH', name: 'Ethereum' },
+    email: 'user@example.com',
+    walletAddress: '0x3FE9a7D68C6a4a2d6575A6C803E4CDF9340E370E',
+    redirectUrl: 'https://yourapp.com/success',
+    selectedCountryCode: 'US'
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [generatedUrl, setGeneratedUrl] = useState('');
+  const [activeTab, setActiveTab] = useState('configure');
+  const [showCode, setShowCode] = useState(false);
+  const [supportedCurrencies, setSupportedCurrencies] = useState({ fiat: [], crypto: [] });
+  const [loadingCurrencies, setLoadingCurrencies] = useState(false);
+  const [showProviderDetails, setShowProviderDetails] = useState(false);
+  const [rampType, setRampType] = useState('ON');
+
+  const providers = {
+    TRANSAK: {
+      name: 'Transak',
+      description: 'Global leader in fiat-to-crypto infrastructure',
+      features: ['150+ Countries', 'KYC/AML Compliant', 'Credit/Debit Cards', 'Bank Transfers', 'Apple Pay/Google Pay', 'Multiple Cryptocurrencies'],
+      fees: '0.99% - 5.5%',
+      processingTime: '10-30 minutes',
+      supported: ['150+ countries', '100+ cryptocurrencies', '50+ fiat currencies'],
+      logo: '🏦',
+      color: 'blue',
+      highlights: ['Most global coverage', 'Established provider', 'Multiple payment methods'],
+      website: 'https://transak.com'
+    },
+    MOONPAY: {
+      name: 'MoonPay',
+      description: 'Simple and fast crypto purchases',
+      features: ['160+ Countries', 'Fast Processing', 'Low Fees', 'Mobile Optimized', 'Instant Purchases', 'Premium Support'],
+      fees: '1% - 4.5%',
+      processingTime: '5-15 minutes',
+      supported: ['160+ countries', '80+ cryptocurrencies', '40+ fiat currencies'],
+      logo: '🌙',
+      color: 'purple',
+      highlights: ['Fastest processing', 'Mobile-first design', 'Low fees'],
+      website: 'https://moonpay.com'
+    },
+    RAMP_NETWORK: {
+      name: 'Ramp Network',
+      description: 'Enterprise-grade fiat-to-crypto infrastructure',
+      features: ['170+ Countries', 'Enterprise Focused', 'API-First', 'White Label', 'Custom Branding', 'Advanced Analytics'],
+      fees: '0.49% - 2.9%',
+      processingTime: '5-10 minutes',
+      supported: ['170+ countries', '60+ cryptocurrencies', '45+ fiat currencies'],
+      logo: '🚀',
+      color: 'green',
+      highlights: ['Lowest fees', 'Enterprise features', 'Custom branding'],
+      website: 'https://ramp.network'
+    }
+  };
+
+  const popularCurrencies = {
+    fiat: ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK'],
+    crypto: [
+      { symbol: 'ETH', network: 'ethereum', name: 'Ethereum' },
+      { symbol: 'BTC', network: 'mainnet', name: 'Bitcoin' },
+      { symbol: 'USDC', network: 'ethereum', name: 'USD Coin' },
+      { symbol: 'USDT', network: 'ethereum', name: 'Tether' },
+      { symbol: 'MATIC', network: 'polygon', name: 'Polygon' },
+      { symbol: 'BNB', network: 'bsc', name: 'Binance Coin' },
+      { symbol: 'SOL', network: 'solana', name: 'Solana' },
+      { symbol: 'AVAX', network: 'avaxcchain', name: 'Avalanche' }
+    ]
+  };
+
+  const apiEndpoints = {
+    TRANSAK: 'https://api-pay-sandbox.venly.io/fiat-ramp/TRANSAK/on',
+    MOONPAY: 'https://api-pay-sandbox.venly.io/fiat-ramp/MOONPAY/on',
+    RAMP_NETWORK: 'https://api-pay-sandbox.venly.io/fiat-ramp/RAMP_NETWORK/on'
+  };
+
+  // Simulate fetching supported currencies
+  const fetchSupportedCurrencies = async (provider) => {
+    setLoadingCurrencies(true);
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      // Mock response based on the documentation
+      const mockCurrencies = {
+        fiat: [
+          { name: 'US Dollar', symbol: 'USD', rampType: ['ON', 'OFF'] },
+          { name: 'Euro', symbol: 'EUR', rampType: ['ON', 'OFF'] },
+          { name: 'British Pound', symbol: 'GBP', rampType: ['ON', 'OFF'] },
+          { name: 'Canadian Dollar', symbol: 'CAD', rampType: ['ON', 'OFF'] },
+          { name: 'Australian Dollar', symbol: 'AUD', rampType: ['ON', 'OFF'] },
+          { name: 'Japanese Yen', symbol: 'JPY', rampType: ['ON', 'OFF'] },
+          { name: 'Swiss Franc', symbol: 'CHF', rampType: ['ON', 'OFF'] },
+          { name: 'Swedish Krona', symbol: 'SEK', rampType: ['ON', 'OFF'] }
+        ],
+        crypto: [
+          { name: 'Ethereum', symbol: 'ETH', network: 'ethereum', rampType: ['ON', 'OFF'] },
+          { name: 'Bitcoin', symbol: 'BTC', network: 'mainnet', rampType: ['ON', 'OFF'] },
+          { name: 'USD Coin', symbol: 'USDC', network: 'ethereum', rampType: ['ON', 'OFF'] },
+          { name: 'Tether', symbol: 'USDT', network: 'ethereum', rampType: ['ON', 'OFF'] },
+          { name: 'Polygon', symbol: 'MATIC', network: 'polygon', rampType: ['ON', 'OFF'] },
+          { name: 'Binance Coin', symbol: 'BNB', network: 'bsc', rampType: ['ON', 'OFF'] },
+          { name: 'Solana', symbol: 'SOL', network: 'solana', rampType: ['ON', 'OFF'] },
+          { name: 'Avalanche', symbol: 'AVAX', network: 'avaxcchain', rampType: ['ON', 'OFF'] }
+        ]
+      };
+      
+      setSupportedCurrencies(mockCurrencies);
+      setLoadingCurrencies(false);
+    }, 1000);
+  };
+
+  const generateOnrampUrl = async () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      const baseUrls = {
+        TRANSAK: 'https://global-stg.transak.com',
+        MOONPAY: 'https://buy-sandbox.moonpay.com',
+        RAMP_NETWORK: 'https://app.demo.ramp.network'
+      };
+      
+      const params = new URLSearchParams({
+        fiatAmount: formData.fiatAmount,
+        fiatCurrency: formData.fiatCurrency,
+        cryptoAmount: formData.cryptoAmount,
+        cryptoCurrency: formData.cryptoCurrency.symbol,
+        network: formData.cryptoCurrency.network,
+        walletAddress: formData.walletAddress,
+        email: formData.email,
+        redirectUrl: formData.redirectUrl
+      });
+      
+      if (selectedProvider === 'RAMP_NETWORK') {
+        params.append('selectedCountryCode', formData.selectedCountryCode);
+      }
+      
+      const url = `${baseUrls[selectedProvider]}?${params.toString()}`;
+      setGeneratedUrl(url);
+      setIsLoading(false);
+    }, 2000);
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const getRequestBody = () => {
+    const body = {
+      fiatAmount: formData.fiatAmount,
+      fiatCurrency: formData.fiatCurrency,
+      cryptoAmount: formData.cryptoAmount,
+      cryptoCurrency: {
+        network: formData.cryptoCurrency.network,
+        symbol: formData.cryptoCurrency.symbol
+      },
+      redirectUrl: formData.redirectUrl,
+      email: formData.email,
+      walletAddress: formData.walletAddress
+    };
+
+    if (selectedProvider === 'RAMP_NETWORK') {
+      body.selectedCountryCode = formData.selectedCountryCode;
+    }
+
+    return JSON.stringify(body, null, 2);
+  };
+
+  const getCodeExample = () => {
+    return `// Venly Onramp Integration Example
+const response = await fetch('${apiEndpoints[selectedProvider]}', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer your-access-token'
+  },
+  body: JSON.stringify(${getRequestBody()})
+});
+
+const data = await response.json();
+if (data.success) {
+  const onrampUrl = data.result.url;
+  
+  // Option 1: Redirect user to onramp
+  window.location.href = onrampUrl;
+  
+  // Option 2: Open in popup
+  const popup = window.open(onrampUrl, 'onramp', 'width=500,height=700');
+  
+  // Option 3: Embed in iframe
+  const iframe = document.createElement('iframe');
+  iframe.src = onrampUrl;
+  iframe.style.width = '100%';
+  iframe.style.height = '600px';
+  document.body.appendChild(iframe);
+}`;
+  };
+
+  const getCurlExample = () => {
+    return `curl -X POST '${apiEndpoints[selectedProvider]}' \\
+  -H 'Content-Type: application/json' \\
+  -H 'Authorization: Bearer your-access-token' \\
+  -d '${getRequestBody()}'`;
+  };
+
+  useEffect(() => {
+    fetchSupportedCurrencies(selectedProvider);
+  }, [selectedProvider]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
+      <div className="max-w-8xl mx-auto">
+        
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-full mr-4">
+              <Zap className="w-8 h-8" />
+            </div>
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Venly Onramp Integration
+            </h1>
+          </div>
+          <p className="text-xl text-gray-600 max-w-4xl mx-auto">
+            Interactive configuration tool for Venly's fiat-to-crypto onramp solutions. 
+            Choose your provider, configure parameters, and generate integration code.
+          </p>
+          <div className="flex items-center justify-center mt-6 space-x-6">
+            <div className="flex items-center text-gray-600">
+              <Globe className="w-5 h-5 mr-2" />
+              <span>3 Global Providers</span>
+            </div>
+            <div className="flex items-center text-gray-600">
+              <Users className="w-5 h-5 mr-2" />
+              <span>170+ Countries</span>
+            </div>
+            <div className="flex items-center text-gray-600">
+              <TrendingUp className="w-5 h-5 mr-2" />
+              <span>100+ Cryptocurrencies</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Provider Selection Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {Object.entries(providers).map(([key, provider]) => (
+            <div
+              key={key}
+              className={`relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 hover:scale-105 ${
+                selectedProvider === key
+                  ? `border-${provider.color}-500 bg-${provider.color}-50 shadow-lg`
+                  : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+              }`}
+              onClick={() => setSelectedProvider(key)}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <span className="text-3xl mr-3">{provider.logo}</span>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">{provider.name}</h3>
+                    <p className="text-sm text-gray-600">{provider.processingTime}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-gray-900">{provider.fees}</div>
+                  <div className="text-xs text-gray-500">fees</div>
+                </div>
+              </div>
+              
+              <p className="text-gray-700 mb-4 text-sm">{provider.description}</p>
+              
+              <div className="space-y-2">
+                {provider.highlights.map((highlight, idx) => (
+                  <div key={idx} className="flex items-center">
+                    <Check className="w-4 h-4 text-green-500 mr-2" />
+                    <span className="text-sm text-gray-700">{highlight}</span>
+                  </div>
+                ))}
+              </div>
+              
+              {selectedProvider === key && (
+                <div className="absolute top-4 right-4">
+                  <div className={`w-3 h-3 rounded-full bg-${provider.color}-500`}></div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Panel - Configuration */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-4">
+              
+              {/* Tab Navigation */}
+              <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setActiveTab('configure')}
+                  className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'configure' 
+                      ? 'bg-white text-blue-600 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Settings className="w-4 h-4 inline mr-2" />
+                  Configure
+                </button>
+                <button
+                  onClick={() => setActiveTab('currencies')}
+                  className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'currencies' 
+                      ? 'bg-white text-blue-600 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <DollarSign className="w-4 h-4 inline mr-2" />
+                  Currencies
+                </button>
+              </div>
+
+              {activeTab === 'configure' && (
+                <div className="space-y-6">
+                  {/* Ramp Type Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ramp Type
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setRampType('ON')}
+                        className={`p-3 rounded-lg text-sm font-medium transition-colors ${
+                          rampType === 'ON'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Buy Crypto (Onramp)
+                      </button>
+                      <button
+                        onClick={() => setRampType('OFF')}
+                        className={`p-3 rounded-lg text-sm font-medium transition-colors ${
+                          rampType === 'OFF'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Sell Crypto (Offramp)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Fiat Amount */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Fiat Amount
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={formData.fiatAmount}
+                        onChange={(e) => setFormData({...formData, fiatAmount: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="300"
+                        min="1"
+                        max="10000"
+                      />
+                      <div className="absolute right-3 top-3 text-gray-400">
+                        {formData.fiatCurrency}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fiat Currency */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Fiat Currency
+                    </label>
+                    <select
+                      value={formData.fiatCurrency}
+                      onChange={(e) => setFormData({...formData, fiatCurrency: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {popularCurrencies.fiat.map(currency => (
+                        <option key={currency} value={currency}>{currency}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Crypto Currency */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Cryptocurrency
+                    </label>
+                    <select
+                      value={formData.cryptoCurrency.symbol}
+                      onChange={(e) => {
+                        const crypto = popularCurrencies.crypto.find(c => c.symbol === e.target.value);
+                        setFormData({...formData, cryptoCurrency: crypto});
+                      }}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {popularCurrencies.crypto.map(crypto => (
+                        <option key={crypto.symbol} value={crypto.symbol}>
+                          {crypto.symbol} - {crypto.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Wallet Address */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Wallet Address
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.walletAddress}
+                      onChange={(e) => setFormData({...formData, walletAddress: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                      placeholder="0x..."
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="user@example.com"
+                    />
+                  </div>
+
+                  {/* Redirect URL */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Redirect URL
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.redirectUrl}
+                      onChange={(e) => setFormData({...formData, redirectUrl: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="https://yourapp.com/success"
+                    />
+                  </div>
+
+                  {/* Country Code (for Ramp Network) */}
+                  {selectedProvider === 'RAMP_NETWORK' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Country Code
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.selectedCountryCode}
+                        onChange={(e) => setFormData({...formData, selectedCountryCode: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="US"
+                        maxLength="2"
+                      />
+                    </div>
+                  )}
+
+                  {/* Generate Button */}
+                  <button
+                    onClick={generateOnrampUrl}
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Generating...
+                      </div>
+                    ) : (
+                      <div className="flex items-center">
+                        <Play className="w-5 h-5 mr-2" />
+                        Generate {rampType === 'ON' ? 'Onramp' : 'Offramp'} URL
+                      </div>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {activeTab === 'currencies' && (
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Supported Currencies
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {providers[selectedProvider].name} supported currencies
+                    </p>
+                  </div>
+
+                  {loadingCurrencies ? (
+                    <div className="text-center py-8">
+                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                      <p className="text-sm text-gray-600">Loading currencies...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Fiat Currencies</h4>
+                        <div className="grid grid-cols-3 gap-2">
+                          {supportedCurrencies.fiat.slice(0, 12).map(currency => (
+                            <div key={currency.symbol} className="bg-gray-50 p-2 rounded text-center">
+                              <span className="text-sm font-medium">{currency.symbol}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Cryptocurrencies</h4>
+                        <div className="space-y-2">
+                          {supportedCurrencies.crypto.slice(0, 8).map(crypto => (
+                            <div key={crypto.symbol} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                              <span className="text-sm font-medium">{crypto.symbol}</span>
+                              <span className="text-xs text-gray-500">{crypto.network}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Panel - Results & Code */}
+          <div className="lg:col-span-2">
+            <div className="space-y-6">
+              
+              {/* Provider Details */}
+              <div className="bg-white rounded-2xl shadow-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center">
+                    <span className="text-3xl mr-3">{providers[selectedProvider].logo}</span>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {providers[selectedProvider].name}
+                      </h2>
+                      <p className="text-gray-600">{providers[selectedProvider].description}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowProviderDetails(!showProviderDetails)}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    {showProviderDetails ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <Clock className="w-5 h-5 text-blue-600 mr-2" />
+                      <h4 className="font-medium text-gray-900">Processing Time</h4>
+                    </div>
+                    <p className="text-sm text-gray-600">{providers[selectedProvider].processingTime}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <DollarSign className="w-5 h-5 text-green-600 mr-2" />
+                      <h4 className="font-medium text-gray-900">Fees</h4>
+                    </div>
+                    <p className="text-sm text-gray-600">{providers[selectedProvider].fees}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <Globe className="w-5 h-5 text-purple-600 mr-2" />
+                      <h4 className="font-medium text-gray-900">Coverage</h4>
+                    </div>
+                    <p className="text-sm text-gray-600">{providers[selectedProvider].supported[0]}</p>
+                  </div>
+                </div>
+
+                {showProviderDetails && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium text-gray-900 mb-3">Features</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {providers[selectedProvider].features.map((feature, idx) => (
+                        <div key={idx} className="flex items-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-sm text-gray-700">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Generated URL */}
+              {generatedUrl && (
+                <div className="bg-white rounded-2xl shadow-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-gray-900">Generated {rampType === 'ON' ? 'Onramp' : 'Offramp'} URL</h3>
+                    <button
+                      onClick={() => copyToClipboard(generatedUrl)}
+                      className="flex items-center text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1 rounded-lg"
+                    >
+                      <Copy className="w-4 h-4 mr-1" />
+                      Copy
+                    </button>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                    <code className="text-sm break-all text-gray-800">{generatedUrl}</code>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => window.open(generatedUrl, '_blank')}
+                      className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Open in New Tab
+                    </button>
+                    <button
+                      onClick={() => setShowCode(!showCode)}
+                      className="flex items-center bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                    >
+                      <Code className="w-4 h-4 mr-2" />
+                      {showCode ? 'Hide' : 'Show'} Code
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* API Integration */}
+              <div className="bg-white rounded-2xl shadow-xl p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">API Integration</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Endpoint
+                    </label>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <code className="text-sm text-blue-600">POST {apiEndpoints[selectedProvider]}</code>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Request Body
+                    </label>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <pre className="text-sm overflow-x-auto text-gray-800">{getRequestBody()}</pre>
+                    </div>
+                  </div>
+
+                  {showCode && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          JavaScript Example
+                        </label>
+                        <div className="bg-gray-900 text-green-400 p-4 rounded-lg">
+                          <pre className="text-sm overflow-x-auto">{getCodeExample()}</pre>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          cURL Example
+                        </label>
+                        <div className="bg-gray-900 text-green-400 p-4 rounded-lg">
+                          <pre className="text-sm overflow-x-auto">{getCurlExample()}</pre>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Integration Steps */}
+              <div className="bg-white rounded-2xl shadow-xl p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Integration Steps</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-start">
+                    <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium mr-4 mt-1">1</div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">Get API Credentials</h4>
+                      <p className="text-sm text-gray-600">
+                        Fill out the onboarding form and complete KYB to receive your Client ID and Client Secret
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start">
+                    <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium mr-4 mt-1">2</div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">Configure Provider Keys</h4>
+                      <p className="text-sm text-gray-600">
+                        Configure your API keys for MoonPay, Transak, and Ramp Network through the Venly Portal
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start">
+                    <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium mr-4 mt-1">3</div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">Make API Request</h4>
+                      <p className="text-sm text-gray-600">
+                        Use the generated code above to create onramp URLs for your users
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start">
+                    <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium mr-4 mt-1">4</div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">Handle Response</h4>
+                      <p className="text-sm text-gray-600">
+                        Redirect users to the generated URL or embed it in your application
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Security & Compliance */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
+                <div className="flex items-start">
+                  <Shield className="w-5 h-5 text-yellow-600 mr-3 mt-1" />
+                  <div>
+                    <h4 className="font-medium text-yellow-800 mb-2">Security & Compliance</h4>
+                    <ul className="text-sm text-yellow-700 space-y-1">
+                      <li>• This is a sandbox environment for testing purposes</li>
+                      <li>• In production, you must configure your own API keys for full control</li>
+                      <li>• All providers are KYC/AML compliant</li>
+                      <li>• Validate all user inputs and implement proper error handling</li>
+                      <li>• Configure webhooks to receive payment notifications</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-12 text-center text-gray-600">
+          <p>
+            Built with Venly API • 
+            <a href="https://docs.venly.io" className="text-blue-600 hover:text-blue-700 ml-1">Documentation</a> • 
+            <a href="https://portal.venly.io" className="text-blue-600 hover:text-blue-700 ml-2">Portal</a> •
+            <a href="mailto:support@venly.io" className="text-blue-600 hover:text-blue-700 ml-2">Support</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default VenlyOnrampWidget;
+
+            
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
+                    <div className="max-w-8xl mx-auto">
+                        <div className="text-center mb-8">
+                            <div className="flex items-center justify-center mb-4">
+                                <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-full mr-4">
+                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                </div>
+                                <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                    Venly Onramp Integration
+                                </h1>
+                            </div>
+                            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
+                                Interactive configuration tool for Venly's fiat-to-crypto onramp solutions. 
+                                Choose your provider, configure parameters, and generate integration code.
+                            </p>
+                        </div>
+                        
+                        {/* Add your complete widget content here */}
+                        <div className="bg-white rounded-2xl shadow-xl p-8">
+                            <div className="text-center">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                    Widget Content Loading...
+                                </h2>
+                                <p className="text-gray-600">
+                                    Replace this section with your complete widget JSX from the previous artifact.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        
+        // Initialize the widget
+        try {
+            // Hide loading screen
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('venly-onramp-widget').style.display = 'block';
+            
+            // Render the widget
+            ReactDOM.render(
+                <ErrorBoundary>
+                    <VenlyOnrampWidget />
+                </ErrorBoundary>,
+                document.getElementById('venly-onramp-widget')
+            );
+            
+            // Track successful load
+            trackEvent('widget_loaded', 'widget', 'success');
+            
+        } catch (error) {
+            console.error('Failed to render widget:', error);
+            
+            // Show error fallback
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-fallback').style.display = 'block';
+            
+            // Track error
+            trackEvent('widget_error', 'widget', error.message);
+        }
     </script>
 </body>
 </html>
