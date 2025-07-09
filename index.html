@@ -346,6 +346,10 @@
                 production: 'https://login.venly.io/auth/realms/Arkane/protocol/openid-connect/token'
             };
 
+            // CORS proxy for development (remove in production)
+            const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+            const useCorsProxy = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
             // Create icon components using lucide
             const CopyIcon = () => (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -488,10 +492,13 @@
                 setAuthError('');
 
                 try {
-                    const response = await fetch(authEndpoints[credentials.environment], {
+                    const endpoint = useCorsProxy ? corsProxy + authEndpoints[credentials.environment] : authEndpoints[credentials.environment];
+                    
+                    const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
+                            ...(useCorsProxy && { 'X-Requested-With': 'XMLHttpRequest' })
                         },
                         body: new URLSearchParams({
                             grant_type: 'client_credentials',
@@ -522,14 +529,99 @@
                 }
             };
 
-            const isTokenValid = () => {
-                return accessToken && tokenExpiry && Date.now() < tokenExpiry;
-            };
+            // Fetch supported currencies from Venly API
+            const fetchSupportedCurrencies = async (provider) => {
+                if (!isTokenValid()) {
+                    // If not authenticated, show mock data
+                    setLoadingCurrencies(true);
+                    setTimeout(() => {
+                        const mockCurrencies = {
+                            fiat: [
+                                { name: 'US Dollar', symbol: 'USD', rampType: ['ON', 'OFF'] },
+                                { name: 'Euro', symbol: 'EUR', rampType: ['ON', 'OFF'] },
+                                { name: 'British Pound', symbol: 'GBP', rampType: ['ON', 'OFF'] },
+                                { name: 'Canadian Dollar', symbol: 'CAD', rampType: ['ON', 'OFF'] },
+                                { name: 'Australian Dollar', symbol: 'AUD', rampType: ['ON', 'OFF'] },
+                                { name: 'Japanese Yen', symbol: 'JPY', rampType: ['ON', 'OFF'] },
+                                { name: 'Swiss Franc', symbol: 'CHF', rampType: ['ON', 'OFF'] },
+                                { name: 'Swedish Krona', symbol: 'SEK', rampType: ['ON', 'OFF'] }
+                            ],
+                            crypto: [
+                                { name: 'Ethereum', symbol: 'ETH', network: 'ethereum', rampType: ['ON', 'OFF'] },
+                                { name: 'Bitcoin', symbol: 'BTC', network: 'mainnet', rampType: ['ON', 'OFF'] },
+                                { name: 'USD Coin', symbol: 'USDC', network: 'ethereum', rampType: ['ON', 'OFF'] },
+                                { name: 'Tether', symbol: 'USDT', network: 'ethereum', rampType: ['ON', 'OFF'] },
+                                { name: 'Polygon', symbol: 'MATIC', network: 'polygon', rampType: ['ON', 'OFF'] },
+                                { name: 'Binance Coin', symbol: 'BNB', network: 'bsc', rampType: ['ON', 'OFF'] },
+                                { name: 'Solana', symbol: 'SOL', network: 'solana', rampType: ['ON', 'OFF'] },
+                                { name: 'Avalanche', symbol: 'AVAX', network: 'avaxcchain', rampType: ['ON', 'OFF'] }
+                            ]
+                        };
+                        setSupportedCurrencies(mockCurrencies);
+                        setLoadingCurrencies(false);
+                    }, 1000);
+                    return;
+                }
 
-            const getTokenTimeRemaining = () => {
-                if (!tokenExpiry) return 0;
-                const remaining = Math.max(0, tokenExpiry - Date.now());
-                return Math.floor(remaining / 1000);
+                setLoadingCurrencies(true);
+                
+                try {
+                    const endpoint = useCorsProxy ? corsProxy + currencyEndpoints[provider] : currencyEndpoints[provider];
+                    
+                    const response = await fetch(endpoint, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json',
+                            ...(useCorsProxy && { 'X-Requested-With': 'XMLHttpRequest' })
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch currencies: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    if (data.success && data.result) {
+                        setSupportedCurrencies(data.result);
+                        trackEvent('currencies_fetched', 'currencies', provider);
+                    } else {
+                        throw new Error('Invalid response format');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error fetching currencies:', error);
+                    setAuthError(`Error fetching currencies: ${error.message}`);
+                    
+                    // Fallback to mock data if API fails
+                    const mockCurrencies = {
+                        fiat: [
+                            { name: 'US Dollar', symbol: 'USD', rampType: ['ON', 'OFF'] },
+                            { name: 'Euro', symbol: 'EUR', rampType: ['ON', 'OFF'] },
+                            { name: 'British Pound', symbol: 'GBP', rampType: ['ON', 'OFF'] },
+                            { name: 'Canadian Dollar', symbol: 'CAD', rampType: ['ON', 'OFF'] },
+                            { name: 'Australian Dollar', symbol: 'AUD', rampType: ['ON', 'OFF'] },
+                            { name: 'Japanese Yen', symbol: 'JPY', rampType: ['ON', 'OFF'] },
+                            { name: 'Swiss Franc', symbol: 'CHF', rampType: ['ON', 'OFF'] },
+                            { name: 'Swedish Krona', symbol: 'SEK', rampType: ['ON', 'OFF'] }
+                        ],
+                        crypto: [
+                            { name: 'Ethereum', symbol: 'ETH', network: 'ethereum', rampType: ['ON', 'OFF'] },
+                            { name: 'Bitcoin', symbol: 'BTC', network: 'mainnet', rampType: ['ON', 'OFF'] },
+                            { name: 'USD Coin', symbol: 'USDC', network: 'ethereum', rampType: ['ON', 'OFF'] },
+                            { name: 'Tether', symbol: 'USDT', network: 'ethereum', rampType: ['ON', 'OFF'] },
+                            { name: 'Polygon', symbol: 'MATIC', network: 'polygon', rampType: ['ON', 'OFF'] },
+                            { name: 'Binance Coin', symbol: 'BNB', network: 'bsc', rampType: ['ON', 'OFF'] },
+                            { name: 'Solana', symbol: 'SOL', network: 'solana', rampType: ['ON', 'OFF'] },
+                            { name: 'Avalanche', symbol: 'AVAX', network: 'avaxcchain', rampType: ['ON', 'OFF'] }
+                        ]
+                    };
+                    setSupportedCurrencies(mockCurrencies);
+                    trackEvent('currencies_fallback', 'currencies', error.message);
+                } finally {
+                    setLoadingCurrencies(false);
+                }
             };
 
             const generateOnrampUrl = async () => {
@@ -559,11 +651,14 @@
                         requestBody.selectedCountryCode = formData.selectedCountryCode;
                     }
 
-                    const response = await fetch(apiEndpoints[selectedProvider], {
+                    const endpoint = useCorsProxy ? corsProxy + apiEndpoints[selectedProvider] : apiEndpoints[selectedProvider];
+                    
+                    const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${accessToken}`
+                            'Authorization': `Bearer ${accessToken}`,
+                            ...(useCorsProxy && { 'X-Requested-With': 'XMLHttpRequest' })
                         },
                         body: JSON.stringify(requestBody)
                     });
@@ -588,6 +683,16 @@
                 } finally {
                     setIsLoading(false);
                 }
+            };
+
+            const isTokenValid = () => {
+                return accessToken && tokenExpiry && Date.now() < tokenExpiry;
+            };
+
+            const getTokenTimeRemaining = () => {
+                if (!tokenExpiry) return 0;
+                const remaining = Math.max(0, tokenExpiry - Date.now());
+                return Math.floor(remaining / 1000);
             };
 
             const copyToClipboard = (text) => {
@@ -824,6 +929,19 @@ curl -X POST '${apiEndpoints[selectedProvider]}' \\
                                                     Enter your Venly API credentials to authenticate
                                                 </p>
                                             </div>
+
+                                            {/* CORS Warning */}
+                                            {useCorsProxy && (
+                                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                                                    <div className="flex items-center">
+                                                        <AlertTriangleIcon />
+                                                        <span className="text-sm font-medium text-yellow-800 ml-2">CORS Proxy Active</span>
+                                                    </div>
+                                                    <p className="text-sm text-yellow-700 mt-1">
+                                                        Using CORS proxy for development. For production, implement proper CORS handling.
+                                                    </p>
+                                                </div>
+                                            )}
 
                                             {/* Environment Selection */}
                                             <div>
